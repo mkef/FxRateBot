@@ -1,10 +1,11 @@
 /*-----------------------------------------------------------------------------
-A simple echo bot for the Microsoft Bot Framework. 
+    Foreign Currency conversion Bot. 
 -----------------------------------------------------------------------------*/
 
 var restify = require('restify');
 var builder = require('botbuilder');
 var botbuilder_azure = require("botbuilder-azure");
+var request = require('request');
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -47,13 +48,15 @@ const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v1/application?id=' +
 var recognizer = new builder.LuisRecognizer(LuisModelUrl);
 var intents = new builder.IntentDialog({ recognizers: [recognizer] })
 .matches('Greeting', (session) => {
-    session.send('You reached Greeting intent, you said \'%s\'.', session.message.text);
+    session.send('Hi%s how can I help you.', session.message.user.name == 'You' ? ',' : ' ' + session.message.user.name + ',');   
 })
 .matches('Help', (session) => {
-    session.send('You reached Help intent, you said \'%s\'.', session.message.text);
+    //session.send('You reached Help intent, you said \'%s\'.', session.message.text);
+    session.endDialog('Foreign Currency Conversion Bot.');
 })
 .matches('Cancel', (session) => {
-    session.send('You reached Cancel intent, you said \'%s\'.', session.message.text);
+    //session.send('You reached Cancel intent, you said \'%s\'.', session.message.text);
+    session.endDialog('Goodbye.');
 })
 /*
 .matches('<yourIntent>')... See details at http://docs.botframework.com/builder/node/guides/understanding-natural-language/
@@ -64,3 +67,60 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
 
 bot.dialog('/', intents);    
 
+intents.matches(/(exchange|into CAD|to CAD)/i, (session,args) => {
+	session.beginDialog('getExchangeRate');
+});
+    
+//Currency Exchange Dialog 
+bot.dialog('getExchangeRate',[
+    (session)=>{
+         builder.Prompts.text(session, 'What currency you want to exchange to CAD?');
+    },
+    (session, args)=>{
+        
+        if(args.response){
+            console.log(args);
+            session.dialogData.currency = args.response.toUpperCase();
+            builder.Prompts.number(session, 'Amount you want to exchange?', {minValue:1,maxRetries:3});            
+        }else{
+            session.endDialogWithResult({
+                resumed: builder.ResumeReason.notCompleted
+            });
+        }        
+    },
+    (session,args)=>{
+        
+        if(args.response){
+            
+            session.dialogData.amount = args.response;
+            var currencyEx = session.dialogData.currency + '_CAD';
+            var massage  = `Converting ${session.dialogData.currency} to CAD. \nAmount: ${session.dialogData.currency} ${session.dialogData.amount}` ;
+            
+            session.send(massage);         
+          
+            //Service call to get currency exchange rates
+            request(`https://free.currencyconverterapi.com/api/v5/convert?q=${currencyEx}&compact=ultra`
+                , { json: true }
+                , (err, res, body) => {
+                  if (err) { 
+                      session.endDialog(err);
+                      return console.log(err); 
+                   }
+                 
+                 var exchangeRate = body[currencyEx];
+                 var transaction = exchangeRate * session.dialogData.amount;
+                  
+                 if(Object.keys(exchangeRate).length === 0 && exchangeRate.constructor === Object){
+                     session.endDialog('Invalid Currency type.');
+                 }else{
+                     session.endDialog(`Rate: ${exchangeRate} \n CAD  ${transaction}`);
+                 } 
+            });
+            
+        }else{
+            session.endDialogWithResult({
+                resumed: builder.ResumeReason.notCompleted
+            });
+        }   
+    }
+]);

@@ -1,12 +1,12 @@
 {
-  "name": "FxRateBot",
+  "name": "fxratebot",
   "version": "1.0.0",
-  "description": "",
+  "description": "1. make code change in the online editor",
   "main": "index.js",
   "dependencies": {
-    "botbuilder": "^3.13.1",
+    "botbuilder": "^3.14.0",
     "botbuilder-azure": "^3.0.4",
-    "restify": "^5.0.0"
+    "restify": "^5.2.1"
   },
   "devDependencies": {
     "request": "^2.81.0",
@@ -16,5 +16,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Eranga Fonseka",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkef/FxRateBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mkef/FxRateBot/issues"
+  },
+  "homepage": "https://github.com/mkef/FxRateBot#readme"
 }
