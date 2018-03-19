@@ -1,1 +1,8 @@
 node_modules/
+*.js.map
+package-lock.json
+images/
+chat
+Bot Chats.xlsx
+.settings/
+PostDeployScripts/
